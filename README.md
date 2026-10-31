@@ -2,9 +2,9 @@
 
 A Datalog engine written in F# with no runtime dependencies beyond FSharp.Core.
 
-> Work in progress: positive programs (recursion, arithmetic, comparisons)
-> evaluate today. Stratified negation and aggregates parse and type-check but
-> are rejected by the engine until the next milestones.
+> Work in progress: positive programs and stratified negation evaluate today.
+> Aggregates parse and type-check but are rejected by the engine until the
+> next milestone.
 
 ## Language
 
@@ -53,6 +53,16 @@ columns, and later inserts keep it up to date. A greedy planner orders each
 rule body: filters run as soon as their variables are bound, assignments
 bind as early as possible, and among the remaining atoms the one with the
 most bound arguments is joined next.
+
+### Stratified negation
+
+`not p(...)` is evaluated under the standard stratified semantics. The
+engine builds the predicate dependency graph, finds its strongly connected
+components with Tarjan's algorithm, and evaluates them in dependency order,
+so a negated predicate is always complete before anything reads it. A
+program in which a predicate depends on itself through negation, such as
+`win(X) :- move(X, Y), not win(Y).`, has no stratification and is rejected
+with an error naming the cycle.
 
 Arithmetic is checked: overflow, division by zero and arithmetic on symbols
 are reported as errors rather than silently wrapping.

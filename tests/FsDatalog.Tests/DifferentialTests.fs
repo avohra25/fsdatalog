@@ -65,8 +65,7 @@ let generate (rng: Random) (mode: Mode) : string =
 let compare (src: string) =
     let program = Parser.parse src
     let db = Engine.evaluate program
-    let derived = program.Rules |> List.filter (Syntax.isFact >> not) |> List.map (fun r -> r.Head.HPred) |> List.distinct
-    let strata = [ derived ]
+    let strata = db.Strata |> List.map (fun s -> s.Preds)
     let reference = Naive.evaluate strata program
     for KeyValue (p, rel) in db.Relations do
         let expected = Naive.rel reference p |> Set.map Array.ofList
@@ -91,10 +90,13 @@ let run mode seeds =
 let ``positive programs agree with the naive evaluator`` () = run Positive [ 1..300 ]
 
 [<Fact>]
+let ``stratified negation agrees with the naive evaluator`` () = run WithNegation [ 1..300 ]
+
+[<Fact>]
 let ``shuffling body literals does not change the result`` () =
     let rng = Random 42
     for seed in 1..100 do
-        let program = Parser.parse (generate (Random seed) Positive)
+        let program = Parser.parse (generate (Random seed) WithNegation)
         let shuffled =
             { program with
                 Rules = program.Rules |> List.map (fun r -> { r with Body = r.Body |> List.sortBy (fun _ -> rng.Next()) }) }

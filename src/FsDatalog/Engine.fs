@@ -5,7 +5,8 @@ open System.Collections.Generic
 open System.Diagnostics
 
 type EvalStats =
-    { Iterations: int
+    { Strata: int
+      Iterations: int
       Facts: int
       Derived: int
       Elapsed: TimeSpan }
@@ -14,6 +15,7 @@ type EvalStats =
 type Database =
     { Relations: IReadOnlyDictionary<string, Relation>
       Arities: Map<string, int>
+      Strata: Stratum list
       Stats: EvalStats
       Warnings: string list }
 
@@ -21,8 +23,9 @@ type Answer =
     { Columns: string list
       Rows: Value[] list }
 
-/// Bottom-up evaluation of positive programs with semi-naive iteration, so a
-/// round only joins against the previous round's new tuples.
+/// Bottom-up evaluation: strata in dependency order, each solved with
+/// semi-naive iteration so a round only joins against the previous round's
+/// new tuples.
 module Engine =
     let private factTuple (r: Rule) =
         r.Head.HArgs
@@ -94,17 +97,14 @@ module Engine =
         for r in program.Rules do
             if Syntax.hasAggregate r.Head then
                 raise (DatalogError(sprintf "line %d: aggregates are not supported yet" r.Line))
-            for lit in r.Body do
-                match lit with
-                | Neg _ -> raise (DatalogError(sprintf "line %d: negation is not supported yet" r.Line))
-                | _ -> ()
 
-    /// Evaluates a positive program to its least model.
+    /// Evaluates a program to its least (perfect) model.
     let evaluate (program: Program) : Database =
         let sw = Stopwatch.StartNew()
         let warnings = Analysis.check program
         let arities = Analysis.arities program
         rejectUnsupported program
+        let strata = Stratify.stratify program.Rules
         let rels = Dictionary<string, Relation>()
         for KeyValue (p, a) in arities do
             rels.[p] <- Relation(p, a)
@@ -112,14 +112,19 @@ module Engine =
         let mutable factCount = 0
         for f in facts do
             if rels.[f.Head.HPred].Add(factTuple f) then factCount <- factCount + 1
-        // Without negation every derived predicate can be solved together.
-        let derived = rules |> List.map (fun r -> r.Head.HPred) |> Set.ofList
-        let rounds = if rules.IsEmpty then 0 else evalStratum rels derived rules
+        let mutable rounds = 0
+        for s in strata do
+            let preds = Set.ofList s.Preds
+            match rules |> List.filter (fun r -> preds.Contains r.Head.HPred) with
+            | [] -> ()
+            | srules -> rounds <- rounds + evalStratum rels preds srules
         let total = rels.Values |> Seq.sumBy (fun r -> r.Count)
         { Relations = (rels :> IReadOnlyDictionary<string, Relation>)
           Arities = arities
+          Strata = strata
           Stats =
-            { Iterations = rounds
+            { Strata = (strata |> List.map (fun s -> s.Level) |> List.fold max -1) + 1
+              Iterations = rounds
               Facts = factCount
               Derived = total - factCount
               Elapsed = sw.Elapsed }
@@ -138,8 +143,6 @@ module Engine =
     /// named variables in order of first appearance; rows are distinct and sorted.
     let query (db: Database) (q: Query) : Answer =
         Analysis.checkBody q.QLine q.Goals |> ignore
-        if q.Goals |> List.exists (function Neg _ -> true | _ -> false) then
-            raise (DatalogError(sprintf "line %d: negation is not supported yet" q.QLine))
         for lit in q.Goals do
             match lit with
             | Pos a | Neg a ->

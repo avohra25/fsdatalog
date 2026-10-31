@@ -129,9 +129,5 @@ let ``planner result does not depend on literal order`` () =
     assertRows (ints [ [ 1 ] ]) (rows a "r")
 
 [<Fact>]
-let ``negation is rejected for now`` () =
-    failsWith "negation is not supported yet" (fun () -> Engine.run "a(1). b(X) :- a(X), not c(X).")
-
-[<Fact>]
 let ``aggregates are rejected for now`` () =
     failsWith "aggregates are not supported yet" (fun () -> Engine.run "a(1). n(count<X>) :- a(X).")

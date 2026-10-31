@@ -15,6 +15,7 @@
     <Compile Include="Analysis.fs" />
     <Compile Include="Relation.fs" />
     <Compile Include="Plan.fs" />
+    <Compile Include="Stratify.fs" />
     <Compile Include="Engine.fs" />
   </ItemGroup>
 
