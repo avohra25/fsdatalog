@@ -22,7 +22,7 @@ module Pretty =
         | Var v -> v
         | Const c -> value c
 
-    let private opText op =
+    let opText op =
         match op with
         | Add -> "+"
         | Sub -> "-"

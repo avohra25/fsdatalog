@@ -11,6 +11,11 @@
     <Compile Include="ParserTests.fs" />
     <Compile Include="PrettyTests.fs" />
     <Compile Include="AnalysisTests.fs" />
+    <Compile Include="TestUtil.fs" />
+    <Compile Include="Naive.fs" />
+    <Compile Include="RelationTests.fs" />
+    <Compile Include="EngineTests.fs" />
+    <Compile Include="DifferentialTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

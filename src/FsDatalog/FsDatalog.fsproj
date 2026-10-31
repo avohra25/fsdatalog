@@ -13,6 +13,9 @@
     <Compile Include="Parser.fs" />
     <Compile Include="Pretty.fs" />
     <Compile Include="Analysis.fs" />
+    <Compile Include="Relation.fs" />
+    <Compile Include="Plan.fs" />
+    <Compile Include="Engine.fs" />
   </ItemGroup>
 
 </Project>
