@@ -1,0 +1,14 @@
+% Bounded shortest paths: enumerate path costs up to a limit, then take the
+% minimum per destination. (Recursion through min is not stratifiable, so the
+% bound keeps the enumeration finite on cyclic graphs.)
+road(sf, oak, 12). road(oak, berk, 5). road(sf, berk, 20).
+road(berk, rich, 9). road(oak, rich, 16). road(rich, sf, 18).
+
+cost(sf, sf, 0).
+cost(sf, Y, D) :- cost(sf, X, D1), road(X, Y, W), D = D1 + W, D <= 60.
+
+dist(Y, min<D>) :- cost(sf, Y, D).
+farthest(max<D>) :- dist(_, D).
+
+?- dist(Y, D).
+?- farthest(D).

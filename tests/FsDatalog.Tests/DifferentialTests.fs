@@ -93,6 +93,9 @@ let ``positive programs agree with the naive evaluator`` () = run Positive [ 1..
 let ``stratified negation agrees with the naive evaluator`` () = run WithNegation [ 1..300 ]
 
 [<Fact>]
+let ``aggregates agree with the naive evaluator`` () = run WithAggregates [ 1..300 ]
+
+[<Fact>]
 let ``shuffling body literals does not change the result`` () =
     let rng = Random 42
     for seed in 1..100 do

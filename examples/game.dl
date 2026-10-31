@@ -1,0 +1,6 @@
+% The classic "win" program: a position is won if some move leads to a
+% position that is not won. Negation through recursion has no stratified
+% meaning, so fsdatalog rejects this program with an explanation.
+move(a, b). move(b, c). move(c, d).
+win(X) :- move(X, Y), not win(Y).
+?- win(X).

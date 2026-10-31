@@ -1,0 +1,20 @@
+% Bill of materials: how many of each basic part does one bike need?
+% Quantities multiply along the assembly tree.
+uses(bike, frame, 1).  uses(bike, wheel, 2).  uses(bike, brake, 2).
+uses(wheel, spoke, 32). uses(wheel, rim, 1).  uses(wheel, hub, 1).
+uses(hub, bearing, 2).  uses(brake, pad, 2).  uses(brake, cable, 1).
+
+assembly(X) :- uses(X, _, _).
+basic(P) :- uses(_, P, _), not assembly(P).
+
+% needs(Top, Part, Via, Qty): Via is the top-level component the part is
+% reached through, so equal quantities coming from different components are
+% not merged before they are summed.
+needs(T, P, P, Q) :- uses(T, P, Q).
+needs(T, P, Via, Q) :- needs(T, M, Via, Q1), uses(M, P, Q2), Q = Q1 * Q2.
+
+total(P, sum<Q>) :- needs(bike, P, _Via, Q), basic(P).
+kinds(count<P>) :- total(P, _).
+
+?- total(P, N).
+?- kinds(N).

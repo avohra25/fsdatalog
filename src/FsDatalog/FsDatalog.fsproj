@@ -17,6 +17,7 @@
     <Compile Include="Plan.fs" />
     <Compile Include="Stratify.fs" />
     <Compile Include="Engine.fs" />
+    <Compile Include="Session.fs" />
   </ItemGroup>
 
 </Project>

@@ -127,7 +127,3 @@ let ``planner result does not depend on literal order`` () =
     let b = Engine.run "e(1,2). e(2,3). f(3). r(X) :- Z > X, f(Z), e(Y,Z), e(X,Y)."
     assertRows (rows a "r") (rows b "r")
     assertRows (ints [ [ 1 ] ]) (rows a "r")
-
-[<Fact>]
-let ``aggregates are rejected for now`` () =
-    failsWith "aggregates are not supported yet" (fun () -> Engine.run "a(1). n(count<X>) :- a(X).")

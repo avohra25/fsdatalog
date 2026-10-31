@@ -1,0 +1,16 @@
+% Andersen-style points-to analysis for a tiny C-like program:
+%   p = &a;  q = &b;  r = p;  *r = q;  s = *p;  t = s;
+addr(p, a). addr(q, b).
+copy(r, p). copy(t, s).
+store(r, q).   % *r = q
+load(s, p).    % s = *p
+
+pts(V, O) :- addr(V, O).
+pts(V, O) :- copy(V, W), pts(W, O).
+pts(O2, O) :- store(V, W), pts(V, O2), pts(W, O).
+pts(V, O) :- load(V, W), pts(W, O2), pts(O2, O).
+
+alias(X, Y) :- pts(X, O), pts(Y, O), X != Y.
+
+?- pts(t, O).
+?- alias(s, Y).

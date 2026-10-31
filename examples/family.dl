@@ -1,0 +1,15 @@
+/* Same-generation cousins: a classic non-linear recursive query. */
+parent(ann, bob).  parent(ann, cat).
+parent(bob, dan).  parent(cat, eve).
+parent(dan, fay).  parent(eve, gus).
+
+sibling(X, Y) :- parent(P, X), parent(P, Y), X != Y.
+same_gen(X, Y) :- sibling(X, Y).
+same_gen(X, Y) :- parent(A, X), same_gen(A, B), parent(B, Y).
+
+ancestor(A, D) :- parent(A, D).
+ancestor(A, D) :- ancestor(A, M), parent(M, D).
+descendants(A, count<D>) :- ancestor(A, D).
+
+?- same_gen(fay, X).
+?- descendants(P, N), N >= 3.

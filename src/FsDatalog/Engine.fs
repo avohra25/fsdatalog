@@ -34,6 +34,68 @@ module Engine =
             | _ -> raise (DatalogError(sprintf "line %d: facts must be ground" r.Line)))
         |> Array.ofList
 
+    /// Evaluates an aggregate rule (its body only reads lower strata).
+    /// Each group aggregates over the distinct bindings of the body's named variables.
+    let private evalAggregate (rels: Dictionary<string, Relation>) (r: Rule) (emit: Value[] -> unit) =
+        let plan = Planner.compileBody r.Body None
+        let slotOf = plan.SlotNames |> Array.indexed |> Array.map (fun (i, n) -> n, i) |> dict
+        let named = plan.SlotNames |> Array.indexed |> Array.filter (snd >> Names.isWildcard >> not) |> Array.map fst
+        let bindings = HashSet<Value[]>(HashIdentity.Structural)
+        let distinct = ResizeArray<Value[]>()
+        Exec.run plan (fun p _ -> rels.[p]) (fun env ->
+            let b = Array.init plan.Slots (fun i -> env.[i])
+            for i in 0 .. b.Length - 1 do
+                if not (Array.contains i named) then b.[i] <- Int 0L
+            if bindings.Add b then distinct.Add b)
+        let groupCols =
+            r.Head.HArgs
+            |> List.choose (function
+                | HTerm (Var v) -> Some(CSlot slotOf.[v])
+                | HTerm (Const c) -> Some(CConst c)
+                | HAgg _ -> None)
+            |> Array.ofList
+        let groups = Dictionary<Value[], ResizeArray<Value[]>>(HashIdentity.Structural)
+        let groupOrder = ResizeArray<Value[]>()
+        for b in distinct do
+            let key = groupCols |> Array.map (Exec.eval b)
+            match groups.TryGetValue key with
+            | true, g -> g.Add b
+            | _ ->
+                groups.[key] <- ResizeArray [ b ]
+                groupOrder.Add key
+        for key in groupOrder do
+            let members = groups.[key]
+            let mutable gi = 0
+            let tuple =
+                r.Head.HArgs
+                |> List.map (fun arg ->
+                    match arg with
+                    | HTerm _ ->
+                        gi <- gi + 1
+                        key.[gi - 1]
+                    | HAgg (f, v) ->
+                        let s = slotOf.[v]
+                        let values = members |> Seq.map (fun b -> b.[s])
+                        match f with
+                        | Count -> Int(int64 members.Count)
+                        | Min -> Seq.min values
+                        | Max -> Seq.max values
+                        | Sum ->
+                            values
+                            |> Seq.fold
+                                (fun acc v ->
+                                    match acc, v with
+                                    | Int a, Int x ->
+                                        try
+                                            Int(Checked.(+) a x)
+                                        with :? OverflowException ->
+                                            raise (DatalogError(sprintf "line %d: integer overflow in sum" r.Line))
+                                    | _, other ->
+                                        raise (DatalogError(sprintf "line %d: sum needs integers but found %s" r.Line (Pretty.value other))))
+                                (Int 0L))
+                |> Array.ofList
+            emit tuple
+
     /// Solves one stratum to its fixpoint; returns the number of rounds.
     let private evalStratum (rels: Dictionary<string, Relation>) (preds: Set<string>) (rules: Rule list) =
         let newPending () =
@@ -52,9 +114,12 @@ module Engine =
                         | HConst c -> c)
                 if not (target.Contains t) then pending.[pred].Add t |> ignore
 
-        let plain = rules
+        let aggRules, plain = rules |> List.partition (fun r -> Syntax.hasAggregate r.Head)
 
         // Round 0: every rule against the full relations.
+        for r in aggRules do
+            let target = rels.[r.Head.HPred]
+            evalAggregate rels r (fun t -> if not (target.Contains t) then pending.[r.Head.HPred].Add t |> ignore)
         for r in plain do
             let plan, head = Planner.compileRule r None
             Exec.run plan (fun p _ -> rels.[p]) (emitter r.Head.HPred head)
@@ -93,17 +158,11 @@ module Engine =
             rounds <- rounds + 1
         rounds
 
-    let private rejectUnsupported (program: Program) =
-        for r in program.Rules do
-            if Syntax.hasAggregate r.Head then
-                raise (DatalogError(sprintf "line %d: aggregates are not supported yet" r.Line))
-
     /// Evaluates a program to its least (perfect) model.
     let evaluate (program: Program) : Database =
         let sw = Stopwatch.StartNew()
         let warnings = Analysis.check program
         let arities = Analysis.arities program
-        rejectUnsupported program
         let strata = Stratify.stratify program.Rules
         let rels = Dictionary<string, Relation>()
         for KeyValue (p, a) in arities do

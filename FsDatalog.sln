@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4A75031C
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsDatalog.Tests", "tests\FsDatalog.Tests\FsDatalog.Tests.fsproj", "{F8CA3103-30DB-4B26-99A2-3AAD9E87D31C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsDatalog.Cli", "src\FsDatalog.Cli\FsDatalog.Cli.fsproj", "{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{F8CA3103-30DB-4B26-99A2-3AAD9E87D31C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8CA3103-30DB-4B26-99A2-3AAD9E87D31C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8CA3103-30DB-4B26-99A2-3AAD9E87D31C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{134096D0-B247-4B62-B841-AE5EB6E34344} = {61313D65-15C7-4F9E-8159-820DC0FE8629}
 		{F8CA3103-30DB-4B26-99A2-3AAD9E87D31C} = {4A75031C-75F3-4D0C-B7B0-025B7A8DB9FD}
+		{4E793EFA-2B2B-479E-BA27-A6EE3D1A4A18} = {61313D65-15C7-4F9E-8159-820DC0FE8629}
 	EndGlobalSection
 EndGlobal
